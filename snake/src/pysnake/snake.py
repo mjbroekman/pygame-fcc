@@ -9,6 +9,8 @@ import math
 import random
 import pygame
 import sys
+import webcolors
+
 from pygame.locals import *
 import tkinter as tk
 from tkinter import messagebox
@@ -34,8 +36,8 @@ class Segment(object):
         self._old_pos = self.get_pos()
         (self._row,self._col) = segment.get_old_pos()
 
-    def draw(self, color, surface, eyes=False):
-        pygame.draw.rect(surface,color,Rect(self._row*self._width,self._col*self._height,self._width,self._height))
+    def draw(self, surface, eyes=False):
+        pygame.draw.rect(surface,self._color,Rect(self._row*self._width,self._col*self._height,self._width,self._height))
 
     def get_pos(self):
         return (self._row,self._col)
@@ -46,10 +48,10 @@ class Segment(object):
 class Snake(object):
     body = [] # List of Segment objects
     turns = {} # List of turns
-    def __init__(self, color, pos,cell_x,cell_y):
+    def __init__(self, bodycolor, headcolor, pos,cell_x,cell_y):
         self.alive = True
-        self._color = color
-        self._head = Segment(start=pos,cell_x=cell_x,cell_y=cell_y,color=color)
+        self._color = bodycolor
+        self._head = Segment(start=pos,cell_x=cell_x,cell_y=cell_y,color=headcolor)
         self.body.append(self._head)
         self._dirnx = 0
         self._dirny = 1
@@ -62,7 +64,7 @@ class Snake(object):
     def alive(self,state:bool):
         self._alive = state
 
-    def move(self):
+    def move(self,rows,cols):
         for event in pygame.event.get():
             keys = pygame.key.get_pressed()
             if event.type == pygame.QUIT or keys[pygame.K_ESCAPE]:
@@ -97,6 +99,20 @@ class Snake(object):
         for segment in self.body:
             if segment.get_pos() == self._head.get_pos():
                 # We're moving the head
+                (cur_col,cur_row) = segment.get_pos()
+                print(f"We are at {cur_row} {cur_col} moving {self._dirnx} {self._dirny} on a board that is {rows} rows and {cols} cols")
+                if cur_row == 0 and self._dirny == -1: # Top row, moving up
+                    self._dirny = 0
+                    self._dirnx = 1
+                if cur_row == (rows - 1) and self._dirny == 1: # Bottom row, moving down
+                    self._dirny = 0
+                    self._dirnx = -1
+                if cur_col == 0 and self._dirnx == -1: # Left column, moving left
+                    self._dirnx = 0
+                    self._dirny = -1
+                if cur_col == (cols - 1) and self._dirnx == 1: # Right column, moving right
+                    self._dirnx = 0
+                    self._dirny = 1
 
                 segment.move(self._dirnx,self._dirny)
                 for tail_segment in self.body[1:]:
@@ -121,9 +137,9 @@ class Snake(object):
     def draw(self,surface):
         for segment in self.body:
             if segment.get_pos() == self._head.get_pos():
-                segment.draw(self._color,surface,True)
+                segment.draw(surface,True)
             else:
-                segment.draw(self._color,surface)
+                segment.draw(surface)
 
 class Board(object):
     def __init__(self,width,height,rows,cols,bgcolor,fgcolor):
@@ -201,11 +217,11 @@ class Board(object):
         self.drawGrid()
 
 class Game():
-    def __init__(self,width,height,rows,cols,bgcolor,sncolor,skcolor,fgcolor):
+    def __init__(self,width,height,rows,cols,bgcolor,sncolor,hdcolor,skcolor,fgcolor):
         pygame.display.set_caption('Snake Game')
         self.window = Board(width,height,rows,cols,bgcolor,fgcolor)
         pygame.display.update()
-        self.snake = Snake(sncolor,(rows // 2,cols // 2),width // cols,height // rows) # Color is an RGB tuple
+        self.snake = Snake(sncolor,hdcolor,(rows // 2,cols // 2),width // cols,height // rows) # Color is an RGB tuple
         self._snackColor = skcolor
         self.clock = pygame.time.Clock()
 
@@ -217,7 +233,7 @@ class Game():
 
     def play(self):
         while self.snake.alive:
-            self.snake.move()
+            self.snake.move(self.window.rows,self.window.cols)
             self.snake.draw(self.window.get_surface())
             pygame.display.update()
             self.window.redrawWindow()
@@ -230,10 +246,54 @@ rows = 100 # Make sure this divides height evenly
 cols = 100 # Make sure this divides width evenly
 bgcolor = (0,0,0) # Make the background black. This should be an RGB tuple.
 sncolor = (255,0,0) # Make the snake red. This should be an RGB tuple.
+hdcolor = (255,0,0) # Make the head of the snake red. This should be an RGB tuple.
 skcolor = (0,255,0) # Make the snacks green. This should be an RGB tuple
 fgcolor = (255,255,255) # Make the foreground white. These are the lines. This should be an RGB tuple
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description="A password generator implemented in Python.")
+    parser.add_argument("--width",action="store",type=int,help="Board width",default=100)
+    parser.add_argument("--height",action="store",type=int,help="Board height",default=100)
+    parser.add_argument("--rows",action="store",type=int,help="Number of rows", default=10)
+    parser.add_argument("--cols",action="store",type=int,help="Nuimber of columns", default=10)
+    parser.add_argument("--bgcolor",action="store",type=str,help="Background color",default="black")
+    parser.add_argument("--snack",action="store",type=str,help="Snack color",default="lime")
+    parser.add_argument("--snake",action="store",type=str,help="Snake color",default="olive")
+    parser.add_argument("--head",action="store",type=str,help="Color of snake head",default="red")
+    parser.add_argument("--fgcolor",action="store",type=str,help="Foreground color",default="white")
+    args = parser.parse_args()
+
+    try:
+        _bgcolor = webcolors.name_to_rgb(args.bgcolor)
+    except ValueError:
+        _bgcolor = bgcolor
+
+    try:
+        _snake = webcolors.name_to_rgb(args.snake)
+    except ValueError:
+        _snake = sncolor
+
+    try:
+        _head = webcolors.name_to_rgb(args.head)
+    except ValueError:
+        _head = hdcolor
+    
+    try:
+        _snack = webcolors.name_to_rgb(args.snack)
+    except ValueError:
+        _snack = skcolor
+    
+    try:
+        _fgcolor = webcolors.name_to_rgb(args.fgcolor)
+    except ValueError:
+        _fgcolor = fgcolor
+    
+    width = args.width
+    height = args.height
+    rows = args.rows
+    cols = args.cols
+
     pygame.init()
-    game = Game(width,height,rows,cols,bgcolor,sncolor,skcolor,fgcolor)
+    game = Game(width,height,rows,cols,_bgcolor,_snake,_head,_snack,_fgcolor)
     game.play()
