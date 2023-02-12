@@ -1,1 +1,2 @@
-pygame => 2.1.4.dev1
+pygame => 2.1.2
+webcolors => 1.12
