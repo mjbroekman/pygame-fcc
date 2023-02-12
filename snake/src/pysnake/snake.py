@@ -14,28 +14,42 @@ import tkinter as tk
 from tkinter import messagebox
 
 class Segment(object):
-    def __init__(self,start,dirnx=1,dirny=0,color=(255,0,0)):
+    def __init__(self,start,dirnx=1,dirny=0,cell_x=10,cell_y=10,color=(255,0,0)):
         (self._row,self._col) = start
         self._dirnx = dirnx
         self._dirny = dirny
+        self._width = cell_x
+        self._height = cell_y
         self._color = color
+        self._old_pos = (self._row,self._col)
 
     def move(self,dirnx, dirny):
-        pass
+        self._dirnx = dirnx
+        self._dirny = dirny
+        self._old_pos = (self._row,self._col)
+        self._row += self._dirnx
+        self._col += self._dirny
 
-    def draw(self, surface, eyes=False):
-        pass
+    def follow(self,segment):
+        self._old_pos = self.get_pos()
+        (self._row,self._col) = segment.get_old_pos()
+
+    def draw(self, color, surface, eyes=False):
+        pygame.draw.rect(surface,color,Rect(self._row*self._width,self._col*self._height,self._width,self._height))
 
     def get_pos(self):
         return (self._row,self._col)
+    
+    def get_old_pos(self):
+        return self._old_pos
 
 class Snake(object):
     body = [] # List of Segment objects
     turns = {} # List of turns
-    def __init__(self, color, pos):
+    def __init__(self, color, pos,cell_x,cell_y):
         self.alive = True
         self._color = color
-        self._head = Segment(start=pos,color=color)
+        self._head = Segment(start=pos,cell_x=cell_x,cell_y=cell_y,color=color)
         self.body.append(self._head)
         self._dirnx = 0
         self._dirny = 1
@@ -53,6 +67,7 @@ class Snake(object):
             keys = pygame.key.get_pressed()
             if event.type == pygame.QUIT or keys[pygame.K_ESCAPE]:
                 pygame.quit()
+                sys.exit()
             
             if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 print('Turn left')
@@ -79,14 +94,23 @@ class Snake(object):
                 self._dirny = 1
                 self.turns[self._head.get_pos()] = (self._dirnx,self._dirny)
 
-        # for segment in self.body:
-        #     if segment.get_pos() == self._head.get_pos():
-        #         # We're moving the head
-        #         segment.move(self._dirnx,self._dirny)
+        for segment in self.body:
+            if segment.get_pos() == self._head.get_pos():
+                # We're moving the head
+
+                segment.move(self._dirnx,self._dirny)
+                for tail_segment in self.body[1:]:
+                    if tail_segment.get_pos() == self._head.get_pos():
+                        print('You are an ouroboros and have eaten your own tail. Game over.')
+                        print('You lived long enough to become ' + len(self.body) + ' segments long.')
+                        pygame.quit()
+                        sys.exit()
+
+            else:
+                # We're moving a body segment
+                segment.follow(previous_segment)
             
-        #     else:
-        #         # We're moving a body segment
-        #         segment.follow()
+            previous_segment = segment
                 
     def reset(self):
         pass
@@ -94,8 +118,12 @@ class Snake(object):
     def addSegment(self):
         pass
 
-    def draw(self):
-        pass
+    def draw(self,surface):
+        for segment in self.body:
+            if segment.get_pos() == self._head.get_pos():
+                segment.draw(self._color,surface,True)
+            else:
+                segment.draw(self._color,surface)
 
 class Board(object):
     def __init__(self,width,height,rows,cols,bgcolor,fgcolor):
@@ -110,7 +138,6 @@ class Board(object):
         self._window = pygame.display.set_mode((self.width+1,self.height+1))
         pygame.display.update()
 
-    
     @property
     def width(self):
         return self._width
@@ -153,6 +180,9 @@ class Board(object):
         self._cols = count
         self._col_width = self.width // count
 
+    def get_surface(self):
+        return self._window
+
     def drawGrid(self):
         # Draw horizontal line
         for y_val in range(0,self.height+1,self.row_height):
@@ -173,10 +203,9 @@ class Board(object):
 class Game():
     def __init__(self,width,height,rows,cols,bgcolor,sncolor,skcolor,fgcolor):
         pygame.display.set_caption('Snake Game')
-
         self.window = Board(width,height,rows,cols,bgcolor,fgcolor)
         pygame.display.update()
-        self.snake = Snake(sncolor,(rows // 2,cols // 2)) # Color is an RGB tuple
+        self.snake = Snake(sncolor,(rows // 2,cols // 2),width // cols,height // rows) # Color is an RGB tuple
         self._snackColor = skcolor
         self.clock = pygame.time.Clock()
 
@@ -187,8 +216,9 @@ class Game():
         pass
 
     def play(self):
-
         while self.snake.alive:
+            self.snake.move()
+            self.snake.draw(self.window.get_surface())
             pygame.display.update()
             self.window.redrawWindow()
             pygame.time.delay(100) # delay between loop activity aka game 'tick'
@@ -196,8 +226,8 @@ class Game():
 
 width = 1000
 height = 1000
-rows = 2 # Make sure this divides height evenly
-cols = 2 # Make sure this divides width evenly
+rows = 100 # Make sure this divides height evenly
+cols = 100 # Make sure this divides width evenly
 bgcolor = (0,0,0) # Make the background black. This should be an RGB tuple.
 sncolor = (255,0,0) # Make the snake red. This should be an RGB tuple.
 skcolor = (0,255,0) # Make the snacks green. This should be an RGB tuple
