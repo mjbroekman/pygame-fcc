@@ -104,15 +104,23 @@ class Snake(object):
                 if cur_row == 0 and self._dirny == -1: # Top row, moving up
                     self._dirny = 0
                     self._dirnx = 1
+                    if cur_col == (cols - 1):
+                        self._dirnx = -1
                 if cur_row == (rows - 1) and self._dirny == 1: # Bottom row, moving down
                     self._dirny = 0
                     self._dirnx = -1
+                    if cur_col == 0:
+                        self._dirnx = 1
                 if cur_col == 0 and self._dirnx == -1: # Left column, moving left
                     self._dirnx = 0
                     self._dirny = -1
+                    if cur_row == 0:
+                        self._dirny = 1
                 if cur_col == (cols - 1) and self._dirnx == 1: # Right column, moving right
                     self._dirnx = 0
                     self._dirny = 1
+                    if cur_row == (rows - 1):
+                        self._dirny = -1
 
                 segment.move(self._dirnx,self._dirny)
                 for tail_segment in self.body[1:]:
