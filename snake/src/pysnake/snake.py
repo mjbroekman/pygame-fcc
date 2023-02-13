@@ -275,26 +275,31 @@ if __name__ == '__main__':
     try:
         _bgcolor = webcolors.name_to_rgb(args.bgcolor)
     except ValueError:
+        print(f"Unknown color: '{args.bgcolor}'. Defaulting to 'black'")
         _bgcolor = bgcolor
 
     try:
         _snake = webcolors.name_to_rgb(args.snake)
     except ValueError:
+        print(f"Unknown color: '{args.snake}'. Defaulting to 'red'")
         _snake = sncolor
 
     try:
         _head = webcolors.name_to_rgb(args.head)
     except ValueError:
+        print(f"Unknown color: '{args.head}'. Defaulting to 'red'")
         _head = hdcolor
     
     try:
         _snack = webcolors.name_to_rgb(args.snack)
     except ValueError:
+        print(f"Unknown color: '{args.snack}'. Defaulting to 'green'")
         _snack = skcolor
     
     try:
         _fgcolor = webcolors.name_to_rgb(args.fgcolor)
     except ValueError:
+        print(f"Unknown color: '{args.fgcolor}'. Defaulting to 'white'")
         _fgcolor = fgcolor
     
     width = args.width
