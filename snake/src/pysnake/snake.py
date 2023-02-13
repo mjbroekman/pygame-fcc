@@ -47,14 +47,15 @@ class Segment(object):
 
 class Snake(object):
     body = [] # List of Segment objects
-    turns = {} # List of turns
-    def __init__(self, bodycolor, headcolor, pos,cell_x,cell_y):
+
+    def __init__(self, bodycolor, headcolor, pos,cell_x,cell_y,debug):
         self.alive = True
         self._color = bodycolor
         self._head = Segment(start=pos,cell_x=cell_x,cell_y=cell_y,color=headcolor)
         self.body.append(self._head)
         self._dirnx = 0
         self._dirny = 1
+        self.debug = debug
 
     @property
     def alive(self) -> bool:
@@ -72,57 +73,67 @@ class Snake(object):
                 sys.exit()
             
             if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                print('Turn left')
+                if self.debug > 1:
+                    print('Turn left')
                 self._dirnx = -1
                 self._dirny = 0
-                self.turns[self._head.get_pos()] = (self._dirnx,self._dirny)
 
 
             elif keys[pygame.K_UP] or keys[pygame.K_w]:
-                print('Turn up')
+                if self.debug > 1:
+                    print('Turn up')
                 self._dirnx = 0
                 self._dirny = -1
-                self.turns[self._head.get_pos()] = (self._dirnx,self._dirny)
 
             elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                print('Turn right')
+                if self.debug > 1:
+                    print('Turn right')
                 self._dirnx = 1
                 self._dirny = 0
-                self.turns[self._head.get_pos()] = (self._dirnx,self._dirny)
 
             elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-                print('Turn down')
+                if self.debug > 1:
+                    print('Turn down')
                 self._dirnx = 0
                 self._dirny = 1
-                self.turns[self._head.get_pos()] = (self._dirnx,self._dirny)
 
         for segment in self.body:
             if segment.get_pos() == self._head.get_pos():
                 # We're moving the head
                 (cur_col,cur_row) = segment.get_pos()
-                print(f"We are at {cur_row} {cur_col} moving {self._dirnx} {self._dirny} on a board that is {rows} rows and {cols} cols")
+                if self.debug > 1:
+                    print(f"We are at {cur_row} {cur_col} moving {self._dirnx} {self._dirny} on a board that is {rows} rows and {cols} cols")
+
                 if cur_row == 0 and self._dirny == -1: # Top row, moving up
                     self._dirny = 0
                     self._dirnx = 1
+
                     if cur_col == (cols - 1):
                         self._dirnx = -1
+
                 if cur_row == (rows - 1) and self._dirny == 1: # Bottom row, moving down
                     self._dirny = 0
                     self._dirnx = -1
+
                     if cur_col == 0:
                         self._dirnx = 1
+
                 if cur_col == 0 and self._dirnx == -1: # Left column, moving left
                     self._dirnx = 0
                     self._dirny = -1
+
                     if cur_row == 0:
                         self._dirny = 1
+
                 if cur_col == (cols - 1) and self._dirnx == 1: # Right column, moving right
                     self._dirnx = 0
                     self._dirny = 1
+
                     if cur_row == (rows - 1):
                         self._dirny = -1
 
                 segment.move(self._dirnx,self._dirny)
+
                 for tail_segment in self.body[1:]:
                     if tail_segment.get_pos() == self._head.get_pos():
                         print('You are an ouroboros and have eaten your own tail. Game over.')
@@ -133,7 +144,8 @@ class Snake(object):
             else:
                 # We're moving a body segment
                 segment.follow(previous_segment)
-            
+
+            # Set the previous_segment to the current segment before we move on to the next segment in the body            
             previous_segment = segment
                 
     def reset(self):
@@ -150,7 +162,7 @@ class Snake(object):
                 segment.draw(surface)
 
 class Board(object):
-    def __init__(self,width,height,rows,cols,bgcolor,fgcolor):
+    def __init__(self,width,height,rows,cols,bgcolor,fgcolor,debug):
         _real_width = ( width // cols ) * cols
         _real_height = ( height // rows ) * rows
         self.width = _real_width
@@ -159,6 +171,7 @@ class Board(object):
         self.cols = cols
         self._bgcolor = bgcolor
         self._fgcolor = fgcolor
+        self.debug = debug
         self._window = pygame.display.set_mode((self.width+1,self.height+1))
         pygame.display.update()
 
@@ -210,26 +223,30 @@ class Board(object):
     def drawGrid(self):
         # Draw horizontal line
         for y_val in range(0,self.height+1,self.row_height):
-            print(f"Drawing horizontal line from 0,{y_val} to {self.width},{y_val} on {self._window}. color = {self._fgcolor}")
+            if self.debug > 0:
+                print(f"Drawing horizontal line from 0,{y_val} to {self.width},{y_val} on {self._window}. color = {self._fgcolor}")
             pygame.draw.line(self._window,self._fgcolor,(0,y_val),(self.width,y_val),2)
 
         # Draw vertical line
         for x_val in range(0,self.width+1,self.col_width):
-            print(f"Drawing vertical line from {x_val},0 to {x_val},{self.height} on {self._window}. color = {self._fgcolor}")
+            if self.debug > 0:
+                print(f"Drawing vertical line from {x_val},0 to {x_val},{self.height} on {self._window}. color = {self._fgcolor}")
             pygame.draw.line(self._window,self._fgcolor,(x_val,0),(x_val,self.height),2)
 
     def redrawWindow(self):
-        print("Redrawing window...")
-        print(f"Filling {self._window} with {self._bgcolor}")
+        if self.debug > 0:
+            print("Redrawing window...")
+            print(f"Filling {self._window} with {self._bgcolor}")
         self._window.fill(self._bgcolor) # Fill the surface with the background color
         self.drawGrid()
 
 class Game():
-    def __init__(self,width,height,rows,cols,bgcolor,sncolor,hdcolor,skcolor,fgcolor):
+    def __init__(self,width,height,rows,cols,bgcolor,sncolor,hdcolor,skcolor,fgcolor,debug):
+        pygame.init()
         pygame.display.set_caption('Snake Game')
-        self.window = Board(width,height,rows,cols,bgcolor,fgcolor)
+        self.window = Board(width,height,rows,cols,bgcolor,fgcolor,debug)
         pygame.display.update()
-        self.snake = Snake(sncolor,hdcolor,(rows // 2,cols // 2),width // cols,height // rows) # Color is an RGB tuple
+        self.snake = Snake(sncolor,hdcolor,(rows // 2,cols // 2),width // cols,height // rows,debug) # Color is an RGB tuple
         self._snackColor = skcolor
         self.clock = pygame.time.Clock()
 
@@ -248,6 +265,7 @@ class Game():
             pygame.time.delay(100) # delay between loop activity aka game 'tick'
             self.clock.tick(10)    # Sets game refresh to 10 frames per second
 
+# Set some defaults...
 width = 1000
 height = 1000
 rows = 100 # Make sure this divides height evenly
@@ -270,36 +288,42 @@ if __name__ == '__main__':
     parser.add_argument("--snake",action="store",type=str,help="Snake color",default="olive")
     parser.add_argument("--head",action="store",type=str,help="Color of snake head",default="red")
     parser.add_argument("--fgcolor",action="store",type=str,help="Foreground color",default="white")
+    parser.add_argument("--debug","-d",action="count",type=int,help="Set debug level. Can be used multiple times to increase debug level",default=0)
     args = parser.parse_args()
 
     try:
         _bgcolor = webcolors.name_to_rgb(args.bgcolor)
     except ValueError:
-        print(f"Unknown color: '{args.bgcolor}'. Defaulting to 'black'")
+        if args.debug > 0:
+            print(f"Unknown color: '{args.bgcolor}'. Defaulting to 'black'")
         _bgcolor = bgcolor
 
     try:
         _snake = webcolors.name_to_rgb(args.snake)
     except ValueError:
-        print(f"Unknown color: '{args.snake}'. Defaulting to 'red'")
+        if args.debug > 0:
+            print(f"Unknown color: '{args.snake}'. Defaulting to 'red'")
         _snake = sncolor
 
     try:
         _head = webcolors.name_to_rgb(args.head)
     except ValueError:
-        print(f"Unknown color: '{args.head}'. Defaulting to 'red'")
+        if args.debug > 0:
+            print(f"Unknown color: '{args.head}'. Defaulting to 'red'")
         _head = hdcolor
     
     try:
         _snack = webcolors.name_to_rgb(args.snack)
     except ValueError:
-        print(f"Unknown color: '{args.snack}'. Defaulting to 'green'")
+        if args.debug > 0:
+            print(f"Unknown color: '{args.snack}'. Defaulting to 'green'")
         _snack = skcolor
     
     try:
         _fgcolor = webcolors.name_to_rgb(args.fgcolor)
     except ValueError:
-        print(f"Unknown color: '{args.fgcolor}'. Defaulting to 'white'")
+        if args.debug > 0:
+            print(f"Unknown color: '{args.fgcolor}'. Defaulting to 'white'")
         _fgcolor = fgcolor
     
     width = args.width
@@ -307,6 +331,5 @@ if __name__ == '__main__':
     rows = args.rows
     cols = args.cols
 
-    pygame.init()
-    game = Game(width,height,rows,cols,_bgcolor,_snake,_head,_snack,_fgcolor)
+    game = Game(width,height,rows,cols,_bgcolor,_snake,_head,_snack,_fgcolor,args.debug)
     game.play()
