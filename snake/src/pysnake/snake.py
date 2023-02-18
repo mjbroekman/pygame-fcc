@@ -97,7 +97,7 @@ class Snake(object):
                     print('Turn down')
                 self._dirnx = 0
                 self._dirny = 1
-
+                
         for segment in self.body:
             if segment.get_pos() == self._head.get_pos():
                 # We're moving the head
@@ -238,18 +238,18 @@ class Board(object):
     def drawGrid(self):
         # Draw horizontal line
         for y_val in range(0,self.height+1,self.row_height):
-            if self.debug > 0:
+            if self.debug > 2:
                 print(f"Drawing horizontal line from 0,{y_val} to {self.width},{y_val} on {self._window}. color = {self._fgcolor}")
             pygame.draw.line(self._window,self._fgcolor,(0,y_val),(self.width,y_val),2)
 
         # Draw vertical line
         for x_val in range(0,self.width+1,self.col_width):
-            if self.debug > 0:
+            if self.debug > 2:
                 print(f"Drawing vertical line from {x_val},0 to {x_val},{self.height} on {self._window}. color = {self._fgcolor}")
             pygame.draw.line(self._window,self._fgcolor,(x_val,0),(x_val,self.height),2)
 
     def redrawWindow(self,snacklist):
-        if self.debug > 0:
+        if self.debug > 1:
             print("Redrawing window...")
             print(f"Filling {self._window} with {self._bgcolor}")
         self._window.fill(self._bgcolor) # Fill the surface with the background color
@@ -268,13 +268,15 @@ class Game():
         pygame.display.update()
         self.snake = Snake(sncolor,hdcolor,(rows // 2,cols // 2),width // cols,height // rows,debug) # Color is an RGB tuple
         self.clock = pygame.time.Clock()
+        self.debug = debug
 
     def randomSnack(self,snake_cells,num_snacks=1):
         #                              X                                  Y
         new_snack = (random.randrange(0,self.window.cols),random.randrange(0,self.window.cols))
         while len(self._snacks) < num_snacks:
             if new_snack not in snake_cells and new_snack not in self._snacks:
-                print("Attempting to add a snack... at {}".format(new_snack))
+                if self.debug > 0:
+                    print("Attempting to add a snack... at {}".format(new_snack))
                 self._snacks.append(new_snack)
 
     def message_box(self,subject,content):
@@ -286,7 +288,8 @@ class Game():
             self.snake.draw(self.window.get_surface())
             self.randomSnack(self.snake.get_snake_pos(),num_snacks=1)
             for snack in self._snacks:
-                print("Snack at {}  || Snake Head at {}".format(snack,self.snake.get_head_pos()))
+                if self.debug > 0:
+                    print("Snack at {}  || Snake Head at {}".format(snack,self.snake.get_head_pos()))
                 if snack == self.snake.get_head_pos():
                     self.snake.addSegment()
                     self._snacks.remove(snack)
