@@ -164,13 +164,9 @@ class Snake(object):
         
         return _all_pos
 
-    def reset(self):
-        pass
-
     def addSegment(self):
         p_segment = self.body[-1]
         self.body.append(Segment(start=p_segment.get_old_pos(),cell_x=self._cellx,cell_y=self._celly,color=self._color))
-
 
 class Board(object):
     def __init__(self,width,height,rows,cols,bgcolor,fgcolor,skcolor,debug):
@@ -266,6 +262,7 @@ class Game():
         self.snake = Snake(sncolor,hdcolor,(rows // 2,cols // 2),width // cols,height // rows,debug) # Color is an RGB tuple
         self.clock = pygame.time.Clock()
         self.debug = debug
+        self.delay = 100
 
     def randomSnack(self,snake_cells,num_snacks=1):
         #                              X                                  Y
@@ -296,21 +293,19 @@ class Game():
 
             pygame.display.update()
             self.window.redrawWindow(self._snacks)
-            pygame.time.delay(100) # delay between loop activity aka game 'tick'
-            self.clock.tick(50)    # Sets game refresh to 10 frames per second
+            pygame.time.delay(self.delay) # delay between loop activity aka game 'tick'
+            self.clock.tick(1000)    # Sets game refresh to 10 frames per second
 
         _snake_head = self.snake.get_head_pos()
-        for segment in self.snake.get_snake_pos()[1:]:
-            if _snake_head == segment:
-                self.endgame("We became an ouroboros and ate our own body.")
+        if _snake_head in self.snake.get_snake_pos()[1:]:
+            self.endgame("We became an ouroboros and ate our own body.")
         
         self.endgame()
 
     def endgame(self,msg=""):
-        if msg != "":
-            print(msg)
+        score = len(self.snake.get_snake_pos()) - 1 # Number of _additional_ segments in the snake
+        end_msg = f"{msg}\nFinal Score: {score}"
         
-        print("Final Score: {}".format(len(self.snake.get_snake_pos())-1))
         pygame.quit()
         sys.exit()
 
