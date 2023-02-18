@@ -48,9 +48,11 @@ class Segment(object):
 class Snake(object):
     body = [] # List of Segment objects
 
-    def __init__(self, bodycolor, headcolor, pos,cell_x,cell_y,debug):
+    def __init__(self,bodycolor,headcolor,pos,cell_x,cell_y,debug):
         self.alive = True
         self._color = bodycolor
+        self._cellx = cell_x
+        self._celly = cell_y
         self._head = Segment(start=pos,cell_x=cell_x,cell_y=cell_y,color=headcolor)
         self.body.append(self._head)
         self._dirnx = 0
@@ -65,12 +67,11 @@ class Snake(object):
     def alive(self,state:bool):
         self._alive = state
 
-    def move(self,rows,cols):
+    def move(self,cols,rows):
         for event in pygame.event.get():
             keys = pygame.key.get_pressed()
             if event.type == pygame.QUIT or keys[pygame.K_ESCAPE]:
-                pygame.quit()
-                sys.exit()
+                return False
             
             if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 if self.debug > 1:
@@ -136,10 +137,8 @@ class Snake(object):
 
                 for tail_segment in self.body[1:]:
                     if tail_segment.get_pos() == self._head.get_pos():
-                        print('You are an ouroboros and have eaten your own tail. Game over.')
-                        print('You lived long enough to become ' + len(self.body) + ' segments long.')
-                        pygame.quit()
-                        sys.exit()
+                        # We bit ourselves... we die. return False for the move.
+                        return False
 
             else:
                 # We're moving a body segment
@@ -147,12 +146,9 @@ class Snake(object):
 
             # Set the previous_segment to the current segment before we move on to the next segment in the body            
             previous_segment = segment
-                
-    def reset(self):
-        pass
-
-    def addSegment(self):
-        pass
+        
+        # If we made it through all the looping, we are still alive... return True for the move.
+        return True
 
     def draw(self,surface):
         for segment in self.body:
@@ -161,8 +157,26 @@ class Snake(object):
             else:
                 segment.draw(surface)
 
+    def get_head_pos(self):
+        return self._head.get_pos()
+
+    def get_snake_pos(self):
+        _all_pos = []
+        for segment in self.body:
+            _all_pos.append(segment.get_pos())
+        
+        return _all_pos
+
+    def reset(self):
+        pass
+
+    def addSegment(self):
+        p_segment = self.body[-1]
+        self.body.append(Segment(start=p_segment.get_old_pos(),cell_x=self._cellx,cell_y=self._celly,color=self._color))
+
+
 class Board(object):
-    def __init__(self,width,height,rows,cols,bgcolor,fgcolor,debug):
+    def __init__(self,width,height,rows,cols,bgcolor,fgcolor,skcolor,debug):
         _real_width = ( width // cols ) * cols
         _real_height = ( height // rows ) * rows
         self.width = _real_width
@@ -171,6 +185,7 @@ class Board(object):
         self.cols = cols
         self._bgcolor = bgcolor
         self._fgcolor = fgcolor
+        self._skcolor = skcolor
         self.debug = debug
         self._window = pygame.display.set_mode((self.width+1,self.height+1))
         pygame.display.update()
@@ -233,37 +248,70 @@ class Board(object):
                 print(f"Drawing vertical line from {x_val},0 to {x_val},{self.height} on {self._window}. color = {self._fgcolor}")
             pygame.draw.line(self._window,self._fgcolor,(x_val,0),(x_val,self.height),2)
 
-    def redrawWindow(self):
+    def redrawWindow(self,snacklist):
         if self.debug > 0:
             print("Redrawing window...")
             print(f"Filling {self._window} with {self._bgcolor}")
         self._window.fill(self._bgcolor) # Fill the surface with the background color
         self.drawGrid()
+        for snack in snacklist:
+            pygame.draw.rect(self._window,self._skcolor,Rect(snack[0]*self.col_width,snack[1]*self.row_height,self.col_width,self.row_height))
+
 
 class Game():
+    _snacks = []
+
     def __init__(self,width,height,rows,cols,bgcolor,sncolor,hdcolor,skcolor,fgcolor,debug):
         pygame.init()
         pygame.display.set_caption('Snake Game')
-        self.window = Board(width,height,rows,cols,bgcolor,fgcolor,debug)
+        self.window = Board(width,height,rows,cols,bgcolor,fgcolor,skcolor,debug)
         pygame.display.update()
         self.snake = Snake(sncolor,hdcolor,(rows // 2,cols // 2),width // cols,height // rows,debug) # Color is an RGB tuple
-        self._snackColor = skcolor
         self.clock = pygame.time.Clock()
 
-    def randomSnack(self,rows,items):
-        pass
+    def randomSnack(self,snake_cells,num_snacks=1):
+        #                              X                                  Y
+        new_snack = (random.randrange(0,self.window.cols),random.randrange(0,self.window.cols))
+        while len(self._snacks) < num_snacks:
+            if new_snack not in snake_cells and new_snack not in self._snacks:
+                print("Attempting to add a snack... at {}".format(new_snack))
+                self._snacks.append(new_snack)
 
     def message_box(self,subject,content):
         pass
 
     def play(self):
         while self.snake.alive:
-            self.snake.move(self.window.rows,self.window.cols)
+            self.snake.alive = self.snake.move(self.window.rows,self.window.cols)
             self.snake.draw(self.window.get_surface())
+            self.randomSnack(self.snake.get_snake_pos(),num_snacks=1)
+            for snack in self._snacks:
+                print("Snack at {}  || Snake Head at {}".format(snack,self.snake.get_head_pos()))
+                if snack == self.snake.get_head_pos():
+                    self.snake.addSegment()
+                    self._snacks.remove(snack)
+
             pygame.display.update()
-            self.window.redrawWindow()
+            self.window.redrawWindow(self._snacks)
             pygame.time.delay(100) # delay between loop activity aka game 'tick'
-            self.clock.tick(10)    # Sets game refresh to 10 frames per second
+            self.clock.tick(50)    # Sets game refresh to 10 frames per second
+
+        _snake_head = self.snake.get_head_pos()
+        for segment in self.snake.get_snake_pos()[1:]:
+            if _snake_head == segment:
+                self.endgame("We became an ouroboros and ate our own body.")
+        
+        self.endgame()
+
+    def endgame(self,msg=""):
+        if msg != "":
+            print(msg)
+        
+        print("Final Score: {}".format(len(self.snake.get_snake_pos())-1))
+        pygame.quit()
+        sys.exit()
+
+
 
 # Set some defaults...
 width = 1000
@@ -277,8 +325,9 @@ skcolor = (0,255,0) # Make the snacks green. This should be an RGB tuple
 fgcolor = (255,255,255) # Make the foreground white. These are the lines. This should be an RGB tuple
 
 if __name__ == '__main__':
+    # Use argparse to read command-line arguments to create the board...
     import argparse
-    parser = argparse.ArgumentParser(description="A password generator implemented in Python.")
+    parser = argparse.ArgumentParser(description="A game of Snake implemented in Python.")
     parser.add_argument("--width",action="store",type=int,help="Board width",default=100)
     parser.add_argument("--height",action="store",type=int,help="Board height",default=100)
     parser.add_argument("--rows",action="store",type=int,help="Number of rows", default=10)
@@ -288,7 +337,7 @@ if __name__ == '__main__':
     parser.add_argument("--snake",action="store",type=str,help="Snake color",default="olive")
     parser.add_argument("--head",action="store",type=str,help="Color of snake head",default="red")
     parser.add_argument("--fgcolor",action="store",type=str,help="Foreground color",default="white")
-    parser.add_argument("--debug","-d",action="count",type=int,help="Set debug level. Can be used multiple times to increase debug level",default=0)
+    parser.add_argument("--debug","-d",action="count",help="Set debug level. Can be used multiple times to increase debug level",default=0)
     args = parser.parse_args()
 
     try:
