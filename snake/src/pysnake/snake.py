@@ -36,7 +36,7 @@ class Segment(object):
         self._old_pos = self.get_pos()
         (self._row,self._col) = segment.get_old_pos()
 
-    def draw(self, surface, eyes=False):
+    def draw(self, surface):
         pygame.draw.rect(surface,self._color,Rect(self._row*self._width,self._col*self._height,self._width,self._height))
 
     def get_pos(self):
@@ -152,10 +152,7 @@ class Snake(object):
 
     def draw(self,surface):
         for segment in self.body:
-            if segment.get_pos() == self._head.get_pos():
-                segment.draw(surface,True)
-            else:
-                segment.draw(surface)
+            segment.draw(surface)
 
     def get_head_pos(self):
         return self._head.get_pos()
@@ -278,6 +275,9 @@ class Game():
                 if self.debug > 0:
                     print("Attempting to add a snack... at {}".format(new_snack))
                 self._snacks.append(new_snack)
+
+            new_snack = (random.randrange(0,self.window.cols),random.randrange(0,self.window.cols))
+
 
     def message_box(self,subject,content):
         pass
