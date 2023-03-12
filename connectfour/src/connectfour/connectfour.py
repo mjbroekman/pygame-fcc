@@ -117,6 +117,7 @@ pygame.init()
 player_turn = 1
 game_over = False
 end_msg = "Game is not over! Keep playing!"
+
 while not game_over:
     draw_board(board,gui_board,size)
     col_choice = -1
@@ -165,18 +166,21 @@ while not game_over:
         (game_over, end_msg) = is_game_over(board)
 
     else:
-        if gui_board is not None:
-            pass
         print("That column is full, pick another column")
-
 
 
 draw_board(board,gui_board,size)
 print(end_msg)
+if end_msg.find("Player 1") > -1:
+    text_color = "red"
+elif end_msg.find("Player 2") > -1:
+    text_color = "yellow"
+else:
+    text_color = "white"
 
 pygame.display.set_caption("Game Over")
-font = pygame.font.Font('freesansbold.ttf', 24)
-top_msg = font.render(end_msg,True,"white","black")
+font = pygame.font.Font('freesansbold.ttf', 6 * cols)
+top_msg = font.render(end_msg,True,text_color,"black")
 end_msg = font.render("Press a key to quit",True,"white","black")
 msgBox1 = top_msg.get_rect()
 msgBox3 = end_msg.get_rect()
