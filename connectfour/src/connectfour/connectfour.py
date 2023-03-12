@@ -1,5 +1,23 @@
+'''
+connectfour.py
+
+By: Maarten Broekman
+
+Based on: https://www.freecodecamp.org/news/python-projects-for-beginners/#connect-four-python-project
+
+Skills:
+- Simple numpy matrices
+- Pointer following in PyGame
+- Text in PyGame
+
+Add-ons:
+- Numpy sequence searching
+- Numpy diagonals
+- Dynamic font size and position changes based on board size
+- Handling ties
+
+'''
 import numpy as np
-import math
 import pygame
 import sys
 import argparse
