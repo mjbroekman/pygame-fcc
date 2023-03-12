@@ -1,10 +1,17 @@
 import numpy as np
 import math
-#import pygame
+import pygame
 import sys
+import argparse
 
-def create_board(rows, cols):
-    return np.zeros((rows,cols), int)
+def create_board(rows, cols, size, gui):
+    screen = None
+    if gui:
+        total_height = ( rows * size ) + size
+        total_width = cols * size
+        screen =  pygame.display.set_mode((total_width,total_height))
+
+    return (np.zeros((rows,cols), int),screen)
 
 def is_valid_place(board,column):
     if 0 not in board[:,column]:
@@ -54,15 +61,69 @@ def is_game_over(board:np.ndarray):
 
     return False
 
-board = create_board(6,7)
+def draw_board(board,gui_board,size):
+    print(board)
+    if gui_board is not None:
+        for column in range(gui_board.get_width() // size):
+            for row in range(gui_board.get_height() // size):
+                if row == 0:
+                    pygame.draw.rect(gui_board,(0,0,0),(column*size,row*size,size,size))
+                else:
+                    pygame.draw.rect(gui_board,(0,0,255),(column*size,row*size,size,size))
+        
+        pygame.display.update()
+        pass
+
+
+
+# Defaults
+rows = 6
+cols = 7
+size = 100
+gui = False
+debug = 0
+
+if __name__ == '__main__':
+    # Use argparse to read command-line arguments to create the board...
+    import argparse
+    parser = argparse.ArgumentParser(description="A game of ConnectFour implemented in Python.")
+    parser.add_argument("--rows",action="store",type=int,help="Number of rows",default=6)
+    parser.add_argument("--cols",action="store",type=int,help="Number of columns",default=7)
+    parser.add_argument("--size",action="store",type=int,help="Width of each column", default=100)
+    parser.add_argument("--gui",action="store_true",help="Show a PyGame GUI instead of CLI")
+    parser.add_argument("--debug","-d",action="count",help="Set debug level. Can be used multiple times to increase debug level",default=0)
+    args = parser.parse_args()
+
+    rows = args.rows
+    cols = args.cols
+    size = args.size
+    gui = args.gui
+    debug = args.debug
+
+
+pygame.init()
+
+(board,gui_board) = create_board(rows,cols,size,gui)
 player_turn = 1
-print(board)
+draw_board(board,gui_board,size)
 
 while not is_game_over(board):
     col_choice = -1
     while col_choice < 0 or col_choice > 6:
         try:
-            col_choice = int(input(f"Player {player_turn}, place your piece in a column [0-6]: "))
+            if gui_board is not None:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        (x_pos,y_pos) = event.pos
+                        col_choice = x_pos // size
+                        if debug > 0:
+                            print(f'Dropping piece in column {col_choice}')
+                        
+            if gui_board is None:
+                col_choice = int(input(f"Player {player_turn}, place your piece in a column [0-6]: "))
         except ValueError:
             col_choice = -1
         except KeyboardInterrupt:
@@ -77,6 +138,8 @@ while not is_game_over(board):
             player_turn = 1
 
     else:
+        if gui_board is not None:
+            pass
         print("That column is full, pick another column")
 
-    print(board)
+    draw_board(board,gui_board,size)
