@@ -29,6 +29,9 @@ def is_game_over(board:np.ndarray):
     _p1_seq = list([1]) * 4
     _p2_seq = list([2]) * 4
 
+    if repr(board).count("0") == 0:
+        return (True,"It's a tie!")
+
     # For row or column wins, this is easy.
     # Simply iterate over the rows, rotate the matrix, iterate again
     for layout in board, np.rot90(board):
@@ -37,12 +40,10 @@ def is_game_over(board:np.ndarray):
             row_arr = list(layout[row])
             for i in range(0,(len(row_arr) - 3)):
                 if row_arr[i:i+4] == _p1_seq:
-                    print("Player 1 WINS!")
-                    return True
+                    return (True,"Player 1 WINS!")
 
                 if row_arr[i:i+4] == _p2_seq:
-                    print("Player 2 WINS!")
-                    return True
+                    return (True, "Player 2 WINS!")
         
         # At the same time, we can take the length of the row div2
         # Then check all the diagonals from -div to +div!!!
@@ -52,17 +53,18 @@ def is_game_over(board:np.ndarray):
             if len(row_arr) >= 4:
                 for i in range(0,(len(row_arr) - 3)):
                     if row_arr[i:i+4] == _p1_seq:
-                        print("Player 1 WINS ON A DIAGONAL!")
-                        return True
+                        return (True, "Player 1 WINS ON A DIAGONAL!")
 
                     if row_arr[i:i+4] == _p2_seq:
-                        print("Player 2 WINS ON A DIAGONAL!")
-                        return True
+                        return (True, "Player 2 WINS ON A DIAGONAL!")
 
-    return False
+    return (False,"")
+
 
 def draw_board(board,gui_board,size):
     print(board)
+    print('='*20)
+    print('='*20)
     if gui_board is not None:
         for column in range(gui_board.get_width() // size):
             for row in range(gui_board.get_height() // size):
@@ -113,8 +115,9 @@ pygame.init()
 
 (board,gui_board) = create_board(rows,cols,size,gui)
 player_turn = 1
-
-while not is_game_over(board):
+game_over = False
+end_msg = "Game is not over! Keep playing!"
+while not game_over:
     draw_board(board,gui_board,size)
     col_choice = -1
     while col_choice < 0 or col_choice > 6:
@@ -136,8 +139,8 @@ while not is_game_over(board):
                 for event in pygame.event.get():
                     keys = pygame.key.get_pressed()
                     if event.type == pygame.QUIT or keys[pygame.K_ESCAPE]:
-                        pygame.quit()
-                        sys.exit()
+                        game_over = True
+
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         (x_pos,y_pos) = event.pos
                         col_choice = x_pos // size
@@ -159,18 +162,33 @@ while not is_game_over(board):
         else:
             player_turn = 1
 
+        (game_over, end_msg) = is_game_over(board)
+
     else:
         if gui_board is not None:
             pass
         print("That column is full, pick another column")
 
 
+
 draw_board(board,gui_board,size)
+print(end_msg)
+
+pygame.display.set_caption("Game Over")
+font = pygame.font.Font('freesansbold.ttf', 24)
+top_msg = font.render(end_msg,True,"white","black")
+end_msg = font.render("Press a key to quit",True,"white","black")
+msgBox1 = top_msg.get_rect()
+msgBox3 = end_msg.get_rect()
+msgBox1.center = (gui_board.get_width() // 2, gui_board.get_height() // 4)
+msgBox3.center = (gui_board.get_width() // 2, (gui_board.get_height() // 4) * 3)
+
 while True:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
             pygame.quit()
             sys.exit()
-        if event.type == pygame.KEYDOWN:
-            pygame.quit()
-            sys.exit()
+
+    gui_board.blit(top_msg,msgBox1)
+    gui_board.blit(end_msg,msgBox3)
+    pygame.display.update()
