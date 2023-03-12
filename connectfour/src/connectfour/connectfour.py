@@ -113,15 +113,29 @@ pygame.init()
 
 (board,gui_board) = create_board(rows,cols,size,gui)
 player_turn = 1
-draw_board(board,gui_board,size)
 
 while not is_game_over(board):
+    draw_board(board,gui_board,size)
     col_choice = -1
     while col_choice < 0 or col_choice > 6:
         try:
             if gui_board is not None:
+                color = (0,0,0)
+                if player_turn == 1:
+                    color = (255,0,0)
+                if player_turn == 2:
+                    color = (255,255,0)
+                (x_pos,y_pos) = pygame.mouse.get_pos()
+                column = x_pos // size
+                center_x = (column * size) + (size // 2)
+                center_y = size // 2
+                pygame.draw.rect(gui_board,(0,0,0),(0,0,cols*size,size))
+                pygame.draw.circle(gui_board,color,(center_x,center_y),float(size // 2))
+                pygame.display.update()
+
                 for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
+                    keys = pygame.key.get_pressed()
+                    if event.type == pygame.QUIT or keys[pygame.K_ESCAPE]:
                         pygame.quit()
                         sys.exit()
                     if event.type == pygame.MOUSEBUTTONDOWN:
@@ -150,4 +164,13 @@ while not is_game_over(board):
             pass
         print("That column is full, pick another column")
 
-    draw_board(board,gui_board,size)
+
+draw_board(board,gui_board,size)
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            pygame.quit()
+            sys.exit()
