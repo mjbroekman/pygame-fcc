@@ -70,6 +70,14 @@ def draw_board(board,gui_board,size):
                     pygame.draw.rect(gui_board,(0,0,0),(column*size,row*size,size,size))
                 else:
                     pygame.draw.rect(gui_board,(0,0,255),(column*size,row*size,size,size))
+                    center_x = (column * size) + (size // 2)
+                    center_y = (row * size) + (size // 2)
+                    color = (0,0,0)
+                    if board[row-1][column] == 1:
+                        color = (255,0,0)
+                    if board[row-1][column] == 2:
+                        color = (255,255,0)
+                    pygame.draw.circle(gui_board,color,(center_x,center_y), float(size // 2))
         
         pygame.display.update()
         pass
