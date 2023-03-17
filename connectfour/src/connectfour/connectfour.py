@@ -137,7 +137,8 @@ game_over = False
 end_msg = "Game is not over! Keep playing!"
 
 while not game_over:
-    draw_board(board,gui_board,size)
+    if gui_board is not None or debug > 0:
+        draw_board(board,gui_board,size)
     col_choice = -1
     while col_choice < 0 or col_choice > 6:
         try:
@@ -187,30 +188,33 @@ while not game_over:
         print("That column is full, pick another column")
 
 
-draw_board(board,gui_board,size)
-print(end_msg)
-if end_msg.find("Player 1") > -1:
-    text_color = "red"
-elif end_msg.find("Player 2") > -1:
-    text_color = "yellow"
-else:
-    text_color = "white"
+if gui_board is not None or debug > 0:
+    draw_board(board,gui_board,size)
+    print(end_msg)
 
-pygame.display.set_caption("Game Over")
-font = pygame.font.Font('freesansbold.ttf', 6 * cols)
-top_msg = font.render(end_msg,True,text_color,"black")
-end_msg = font.render("Press a key to quit",True,"white","black")
-msgBox1 = top_msg.get_rect()
-msgBox3 = end_msg.get_rect()
-msgBox1.center = (gui_board.get_width() // 2, gui_board.get_height() // 4)
-msgBox3.center = (gui_board.get_width() // 2, (gui_board.get_height() // 4) * 3)
+if gui_board is not None:
+    if end_msg.find("Player 1") > -1:
+        text_color = "red"
+    elif end_msg.find("Player 2") > -1:
+        text_color = "yellow"
+    else:
+        text_color = "white"
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
-            pygame.quit()
-            sys.exit()
+    pygame.display.set_caption("Game Over")
+    font = pygame.font.Font('freesansbold.ttf', 6 * cols)
+    top_msg = font.render(end_msg,True,text_color,"black")
+    end_msg = font.render("Press a key to quit",True,"white","black")
+    msgBox1 = top_msg.get_rect()
+    msgBox3 = end_msg.get_rect()
+    msgBox1.center = (gui_board.get_width() // 2, gui_board.get_height() // 4)
+    msgBox3.center = (gui_board.get_width() // 2, (gui_board.get_height() // 4) * 3)
 
-    gui_board.blit(top_msg,msgBox1)
-    gui_board.blit(end_msg,msgBox3)
-    pygame.display.update()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+                pygame.quit()
+                sys.exit()
+
+        gui_board.blit(top_msg,msgBox1)
+        gui_board.blit(end_msg,msgBox3)
+        pygame.display.update()
