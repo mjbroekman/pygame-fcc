@@ -7,6 +7,7 @@ based on FreeCodeCamp's Tetris Python Project:
 '''
 import pygame
 import webcolors
+import random
 
 shapes = {
     'O': {
@@ -205,10 +206,39 @@ top_left_x = border_width // 2
 top_left_y = border_height
 
 class Piece(object):
-    pass
+    def __init__(self, x, y, shape, shapedef):
+        self.x = x
+        self.y = y
+        self.shape = shape
+        self.color = shapedef['color']
+        self.turns = shapedef['turns']
+        self.rotation = random.choice(self.turns)
 
-def create_grid(locked_pos = []):
-    pass
+
+def create_grid(x_size, y_size,locked_pos = {}):
+    # initialize the grid to an x_size wide, y_size high 2D list with each item being "black"
+    # we don't care about the variable for the loops, so we can use _ ... if we're being
+    # explicit, the inner list is x and the outer list is y
+    grid = [[(0,0,0) for _ in range(x_size)] for _ in range(y_size)]
+
+    # Loop over the grid now to see if any positions are in locked_pos{}
+    # If they are, set the color to what is in locked_pos{}
+    # the video used i instead of y and j instead of x. I changed that for clarity.
+    ##
+    # Commented out because this exhaustive loop over grid is inefficient
+    ##
+    # for y in range(len(grid)):
+    #     for x in range(len(grid[y])):
+    #         if (x,y) in locked_pos:
+    #             c = locked_pos[(x,y)]
+    #             grid[x][y] = c
+    ##
+    # There will ALWAYS be fewer items in locked_pos than in grid...
+    # Loop over locked_pos instead
+    for (x,y), color in locked_pos.items():
+        grid[x][y] = color
+
+    return grid
 
 def convert_shape_format():
     pass
@@ -220,13 +250,37 @@ def check_lost():
     pass
 
 def get_shape():
-    pass
+    # Return a random key into the shapes dict
+    return random.choice(shapes.keys())
+
 
 def draw_text_middle():
     pass
 
-def draw_grid():
-    pass
+def draw_grid(surface: pygame.Surface, grid):
+    # fill the surface with black
+    surface.fill(0,0,0)
+
+    # initialize a font for our text
+    pygame.font.init()
+    # Set to Arial... for whatever
+    font = pygame.font.SysFont('Arial',60)
+    # Create a label using the font, anti-alias it, and make it white
+    label = font.render('Tetris',1,(255,255,255))
+    # blit it to the surface in the top center
+    surface.blit(label,(top_left_x + play_width // 2 - label.get_width // 2), border_height // 2)
+
+    # Draw the red play background
+    pygame.draw.rect(surface, (255, 0, 0), (top_left_x, top_left_y, play_width, play_height), 4)
+
+    # Draw the play field on top of the red background
+    for y in range(len(grid)):
+        for x in range(len(grid[y])):
+            pygame.draw.rect(surface, grid[x][y], (top_left_x + (x * block_size), top_left_y + (y * block_size), block_size, block_size), 0)
+
+    # Update the display
+    pygame.display.update()
+
 
 def clear_rows():
     pass
