@@ -82,7 +82,6 @@ def is_game_over(board:np.ndarray):
 def draw_board(board,gui_board,size):
     print(board)
     print('='*20)
-    print('='*20)
     if gui_board is not None:
         for column in range(gui_board.get_width() // size):
             for row in range(gui_board.get_height() // size):
@@ -137,7 +136,7 @@ game_over = False
 end_msg = "Game is not over! Keep playing!"
 
 while not game_over:
-    if gui_board is not None or debug > 0:
+    if gui_board is None or debug > 0:
         draw_board(board,gui_board,size)
     col_choice = -1
     while col_choice < 0 or col_choice > 6:
@@ -188,7 +187,7 @@ while not game_over:
         print("That column is full, pick another column")
 
 
-if gui_board is not None or debug > 0:
+if gui_board is None or debug > 0:
     draw_board(board,gui_board,size)
     print(end_msg)
 
