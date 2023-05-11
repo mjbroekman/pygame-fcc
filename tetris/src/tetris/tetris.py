@@ -216,13 +216,42 @@ top_left_x = border_width // 2
 top_left_y = border_height
 
 class Piece(object):
-    def __init__(self, x, y, shape, shapedef):
+    def __init__(self, x, y, shapedef):
         self.x = x
         self.y = y
-        self.shape = shape
+        self.shape = shapedef['name']
         self.color = shapedef['color']
         self.turns = shapedef['turns']
-        self.rotation = random.choice(self.turns)
+        self.turn_length = len(self.turns)
+        self.rotation = random.randrange(self.turn_length)
+        self.last = { "none": 0 }
+
+    def rotate(self):
+        self.last = { "rotation": self.rotation }
+        self.rotation = (self.rotation + 1) % self.turn_length
+    
+    def get_rotation(self):
+        return self.turns[self.rotation]
+    
+    def drop(self):
+        self.last = { "y": self.y }
+        self.y -= 1
+    
+    def left(self):
+        self.last = { "x": self.x }
+        self.x -= 1
+    
+    def right(self):
+        self.last = { "x": self.x }
+        self.x += 1
+    
+    def undo_last(self):
+        if list(self.last.keys())[0] == "rotation":
+            self.rotation = list(self.last.values())[0]
+        if list(self.last.keys())[0] == "x":
+            self.x = list(self.last.values())[0]
+        if list(self.last.keys())[0] == "y":
+            self.y = list(self.last.values())[0]
 
 
 def create_grid(x_size, y_size, locked_pos = {}):
@@ -255,7 +284,7 @@ def create_grid(x_size, y_size, locked_pos = {}):
 def convert_shape_format():
     pass
 
-def valid_space():
+def valid_space(piece: Piece, grid):
     pass
 
 def check_lost():
@@ -263,18 +292,16 @@ def check_lost():
 
 def get_shape():
     # Return a random key into the shapes dict
-    return shapes[random.choice(shape_list)]
-
+    return Piece(block_x_cnt // 2, 0, shapes[random.choice(shape_list)])
 
 def draw_text_middle():
     pass
 
 def draw_grid(surface: pygame.Surface, grid):
-    # Draw the play field on top of the red background
     for y in range(len(grid)):
-        for x in range(len(grid[y])):
-            pygame.draw.rect(surface, color=grid[y][x], rect=(top_left_x + (x * block_size), top_left_y + (y * block_size), block_size, block_size), width=1)
-
+        pygame.draw.line(surface, (128,128,128), (top_left_x, (top_left_y + y * block_size)), (top_left_x + play_width, (top_left_y + y * block_size)) )
+    for x in range(len(grid[y])):
+        pygame.draw.line(surface, (128,128,128), (top_left_x + (x * block_size), top_left_y), (top_left_x + (x * block_size), top_left_y + play_height) )
 
 def clear_rows():
     pass
@@ -294,6 +321,11 @@ def draw_window(surface: pygame.Surface, grid):
     label = font.render('Tetris',1,(255,255,255))
     # blit it to the surface in the top center
     surface.blit(label,((top_left_x + play_width // 2 - label.get_width() // 2), border_height // 2 - label.get_height() // 2))
+
+    # Draw the play field on top of the red background
+    for y in range(len(grid)):
+        for x in range(len(grid[y])):
+            pygame.draw.rect(surface, color=grid[y][x], rect=(top_left_x + (x * block_size), top_left_y + (y * block_size), block_size, block_size), width=1)
 
     # Draw the red play background
     pygame.draw.rect(surface, (255, 0, 0), (top_left_x, top_left_y, play_width, play_height), 4)
@@ -328,17 +360,22 @@ def main(x_size, y_size):
                 if keys[pygame.K_ESCAPE]:
                     run = False
                 if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                    '''Move one cell to the left'''
-                    pass
+                    current_piece.left()
+                    if not(valid_space(current_piece,grid)):
+                        current_piece.undo_last()
                 if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                    '''Move one cell to the right'''
-                    pass
+                    current_piece.right()
+                    if not(valid_space(current_piece,grid)):
+                        current_piece.undo_last()
                 if keys[pygame.K_UP] or keys[pygame.K_w]:
-                    '''Rotate the shape'''
-                    pass
+                    current_piece.rotate()
+                    if not(valid_space(current_piece,grid)):
+                        current_piece.undo_last()
+
                 if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-                    '''Move cell down'''
-                    pass
+                    current_piece.drop()
+                    if not(valid_space(current_piece,grid)):
+                        current_piece.undo_last()
 
         # grid = create_grid(locked_pos)
 
