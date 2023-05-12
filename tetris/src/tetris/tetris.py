@@ -16,11 +16,8 @@ shapes = {
         'color': webcolors.name_to_hex('yellow'),
         'turns': [
             [
-                '.....',
-                '.....',
-                '.oo..',
-                '.oo..',
-                '.....'
+                'oo',
+                'oo'
             ]
         ]
     },
@@ -29,18 +26,13 @@ shapes = {
         'color': webcolors.name_to_hex('green'),
         'turns':[
             [
-                '.....',
-                '.....',
-                '..oo.',
-                '.oo..',
-                '.....'
+                '.oo',
+                'oo.'
             ],
             [
-                '.....',
-                '..o..',
-                '..oo.',
-                '...o.',
-                '.....'
+                '.o.',
+                '.oo',
+                '..o'
             ]
         ]
     },
@@ -49,18 +41,13 @@ shapes = {
         'color': webcolors.name_to_hex('red'),
         'turns':[
             [
-                '.....',
-                '.....',
-                '.oo..',
-                '..oo.',
-                '.....'
+                'oo.',
+                '.oo',
             ],
             [
-                '.....',
-                '...o.',
-                '..oo.',
-                '..o..',
-                '.....'
+                '.o',
+                'oo',
+                'o.'
             ]
         ]
     },
@@ -69,18 +56,14 @@ shapes = {
         'color': webcolors.name_to_hex('cyan'),
         'turns':[
             [
-                '..o..',
-                '..o..',
-                '..o..',
-                '..o..',
-                '.....'
+                '..o',
+                '..o',
+                '..o',
+                '..o'
             ],
             [
-                '.....',
-                'oooo.',
-                '.....',
-                '.....',
-                '.....'
+                '....',
+                'oooo'
             ]
         ]
     },
@@ -89,32 +72,23 @@ shapes = {
         'color': webcolors.name_to_hex('orange'),
         'turns':[
             [
-                '.....',
-                '.o...',
-                '.ooo.',
-                '.....',
-                '.....'
+                'o..',
+                'ooo'
             ],
             [
-                '.....',
-                '..oo.',
-                '..o..',
-                '..o..',
-                '.....'
+                '.oo',
+                '.o.',
+                '.o.'
             ],
             [
-                '.....',
-                '.....',
-                '.ooo.',
-                '...o.',
-                '.....'
+                '...',
+                'ooo',
+                '..o'
             ],
             [
-                '.....',
-                '..o..',
-                '..o..',
-                '.oo..',
-                '.....'
+                '.o',
+                '.o',
+                'oo'
             ],
         ]
     },
@@ -123,32 +97,23 @@ shapes = {
         'color': webcolors.name_to_hex('blue'),
         'turns':[
             [
-                '.....',
-                '...o.',
-                '.ooo.',
-                '.....',
-                '.....'
+                '..o',
+                'ooo'
             ],
             [
-                '.....',
-                '..o..',
-                '..o..',
-                '..oo.',
-                '.....'
+                '.o.',
+                '.o.',
+                '.oo'
             ],
             [
-                '.....',
-                '.....',
-                '.ooo.',
-                '.o...',
-                '.....'
+                '...',
+                'ooo',
+                'o..'
             ],
             [
-                '.....',
-                '.oo..',
-                '..o..',
-                '..o..',
-                '.....'
+                'oo',
+                '.o',
+                '.o'
             ],
         ]
     },
@@ -157,32 +122,23 @@ shapes = {
         'color': webcolors.name_to_hex('magenta'),
         'turns':[
             [
-                '.....',
-                '..o..',
-                '.ooo.',
-                '.....',
-                '.....'
+                '.o.',
+                'ooo'
             ],
             [
-                '.....',
-                '..o..',
-                '..oo.',
-                '..o..',
-                '.....'
+                '.o.',
+                '.oo',
+                '.o.'
             ],
             [
-                '.....',
-                '.....',
-                '.ooo.',
-                '..o..',
-                '.....'
+                '...',
+                'ooo',
+                '.o.'
             ],
             [
-                '.....',
-                '..o..',
-                '.oo..',
-                '..o..',
-                '.....'
+                '.o',
+                'oo',
+                '.o'
             ],
         ]
     },
@@ -217,14 +173,30 @@ top_left_y = border_height
 
 class Piece(object):
     def __init__(self, x, y, shapedef):
-        self.x = x
-        self.y = y
+        self._x = x
+        self._y = y
         self.shape = shapedef['name']
         self.color = shapedef['color']
         self.turns = shapedef['turns']
         self.turn_length = len(self.turns)
         self.rotation = random.randrange(self.turn_length)
         self.last = { "none": 0 }
+
+    @property
+    def x(self):
+        return self._x
+    
+    @x.setter
+    def x(self,val):
+        self._x = val
+
+    @property
+    def y(self):
+        return self._y
+    
+    @y.setter
+    def y(self,val):
+        self._y = val
 
     def rotate(self):
         self.last = { "rotation": self.rotation }
@@ -245,6 +217,9 @@ class Piece(object):
         self.last = { "x": self.x }
         self.x += 1
     
+    def get_form(self):
+        return self.turns[self.rotation]
+
     def undo_last(self):
         if list(self.last.keys())[0] == "rotation":
             self.rotation = list(self.last.values())[0]
@@ -281,8 +256,21 @@ def create_grid(x_size, y_size, locked_pos = {}):
     pp.pprint(grid)
     return grid
 
-def convert_shape_format():
-    pass
+def convert_shape_format(shape: Piece):
+    '''
+    Differs from https://www.youtube.com/watch?v=XGf2GcyHPhc&t=10100s because I
+    trimmed the shapes to their minimum sizes. There shouldn't be a need to
+    adjust like in the video.
+    '''
+    positions = []
+    form = shape.get_form()
+
+    for i, line in enumerate(form):
+        row = list(line)
+        for j, col in enumerate(row):
+            if col == 'o':
+                positions.append((shape.x + j, shape.y + i))
+
 
 def valid_space(piece: Piece, grid):
     pass
