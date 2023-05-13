@@ -258,7 +258,7 @@ def create_grid(x_size, y_size, locked_pos = {}):
 
 def convert_shape_format(shape: Piece):
     '''
-    Differs from https://www.youtube.com/watch?v=XGf2GcyHPhc&t=10100s because I
+    Differs from https://www.youtube.com/watch?v=XGf2GcyHPhc&t=11679s because I
     trimmed the shapes to their minimum sizes. There shouldn't be a need to
     adjust like in the video.
     '''
