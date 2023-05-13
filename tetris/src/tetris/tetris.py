@@ -202,9 +202,6 @@ class Piece(object):
         self.last = { "rotation": self.rotation }
         self.rotation = (self.rotation + 1) % self.turn_length
     
-    def get_rotation(self):
-        return self.turns[self.rotation]
-    
     def drop(self):
         self.last = { "y": self.y }
         self.y -= 1
@@ -217,7 +214,7 @@ class Piece(object):
         self.last = { "x": self.x }
         self.x += 1
     
-    def get_form(self):
+    def get_form(self) -> list:
         return self.turns[self.rotation]
 
     def undo_last(self):
@@ -229,7 +226,7 @@ class Piece(object):
             self.y = list(self.last.values())[0]
 
 
-def create_grid(x_size, y_size, locked_pos = {}):
+def create_grid(x_size, y_size, locked_pos = {}) -> list:
     # initialize the grid to an x_size wide, y_size high 2D list with each item being "black"
     # we don't care about the variable for the loops, so we can use _ ... if we're being
     # explicit, the inner list is x and the outer list is y
@@ -256,7 +253,7 @@ def create_grid(x_size, y_size, locked_pos = {}):
     pp.pprint(grid)
     return grid
 
-def convert_shape_format(shape: Piece):
+def convert_shape_format(shape: Piece) -> list:
     '''
     Differs from https://www.youtube.com/watch?v=XGf2GcyHPhc&t=11679s because I
     trimmed the shapes to their minimum sizes. There shouldn't be a need to
@@ -271,9 +268,16 @@ def convert_shape_format(shape: Piece):
             if col == 'o':
                 positions.append((shape.x + j, shape.y + i))
 
+    return positions
 
-def valid_space(piece: Piece, grid):
-    pass
+def valid_space(piece: Piece, grid) -> bool:
+    accepted_pos = [(j,i) for j in range(len(grid[i])) for i in range(len(grid))]
+
+    for pos in convert_shape_format(piece):
+        if pos not in accepted_pos and pos[1] > -1:
+            return False
+    
+    return True
 
 def check_lost():
     pass
