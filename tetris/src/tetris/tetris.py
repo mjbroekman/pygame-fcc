@@ -271,7 +271,7 @@ def convert_shape_format(shape: Piece) -> list:
     return positions
 
 def valid_space(piece: Piece, grid) -> bool:
-    accepted_pos = [(j,i) for j in range(len(grid[i])) for i in range(len(grid))]
+    accepted_pos = [(j,i) for j in range(len(grid[i])) if grid[i][j] == (0,0,0) for i in range(len(grid))]
 
     for pos in convert_shape_format(piece):
         if pos not in accepted_pos and pos[1] > -1:
