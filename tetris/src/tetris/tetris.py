@@ -361,7 +361,7 @@ def main(x_size, y_size):
 
         if fall_time > fall_speed:
             current_piece.drop()
-            if not(valid_space(current_piece,grid)):
+            if not(valid_space(current_piece,grid)) and current_piece.y > -1:
                 current_piece.undo_last()
                 for pos in convert_shape_format(current_piece.get_form()):
                     locked_pos[pos] = current_piece.color
