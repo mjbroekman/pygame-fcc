@@ -363,6 +363,7 @@ def main(x_size, y_size):
         draw_window(surface,grid)
 
         if fall_time > fall_speed:
+            fall_time = 0
             current_piece.drop()
             if not(valid_space(current_piece,grid)) and current_piece.y > -1:
                 current_piece.undo_last()
