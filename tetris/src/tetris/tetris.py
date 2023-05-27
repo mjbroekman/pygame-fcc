@@ -9,6 +9,7 @@ import pygame
 import webcolors
 import random
 import pprint
+import time
 
 shapes = {
     'O': {
@@ -274,7 +275,7 @@ def convert_shape_format(shape: Piece) -> list:
         row = list(line)
         for j, col in enumerate(row):
             if col == 'o':
-                positions.append((shape.x + j, shape.y + i - 4))
+                positions.append((shape.x + j, shape.y + i))
 
     return positions
 
@@ -288,6 +289,7 @@ def valid_space(piece: Piece, grid) -> bool:
     return True
 
 def check_lost(positions):
+    pprint(positions)
     for (x,y) in positions:
         if y < 1:
             return True
@@ -358,13 +360,12 @@ def main(x_size, y_size):
     while run:
         fall_time += clock.get_rawtime()
         clock.tick()
+        draw_window(surface,grid)
 
         if fall_time > fall_speed:
             current_piece.drop()
             if not(valid_space(current_piece,grid)) and current_piece.y > -1:
                 current_piece.undo_last()
-                for pos in convert_shape_format(current_piece.get_form()):
-                    locked_pos[pos] = current_piece.color
 
                 if check_lost(locked_pos.keys()):
                     run = False
@@ -372,7 +373,6 @@ def main(x_size, y_size):
                     change_piece = True
 
         if run:
-            draw_window(surface,grid)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
@@ -397,23 +397,28 @@ def main(x_size, y_size):
                         current_piece.drop()
                         if not(valid_space(current_piece,grid)):
                             current_piece.undo_last()
-                            for pos in convert_shape_format(current_piece.get_form()):
-                                locked_pos[pos] = current_piece.color
-
                             if check_lost(locked_pos.keys()):
                                 run = False
                             else:
                                 change_piece = True
 
+        shape_pos = convert_shape_format(current_piece)
+
+        for (x,y) in shape_pos:
+            grid[y][x] = current_piece.color
+
         if change_piece:
+            for pos in shape_pos:
+                locked_pos[pos] = current_piece.color
             current_piece = next_piece
             next_piece = get_shape()
             change_piece = False
 
-        # grid = create_grid(locked_pos)
+        grid = create_grid(x_size, y_size, locked_pos)
+
     # draw everything after we break out of the while loop
     draw_window(surface,grid)
-
+    time.sleep(120)
 
 def main_menu(block_x_cnt, block_y_cnt):
     main(block_x_cnt, block_y_cnt)
