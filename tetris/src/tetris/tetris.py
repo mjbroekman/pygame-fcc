@@ -281,6 +281,7 @@ def convert_shape_format(shape: Piece) -> list:
         row = list(line)
         for j, col in enumerate(row):
             if col == 'o':
+                # Offset by -4 to give the appearance of it falling from the top
                 positions.append((shape.x + j, shape.y + i - 4))
 
     return positions
