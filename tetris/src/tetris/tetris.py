@@ -173,7 +173,9 @@ top_left_x = border_width // 2
 top_left_y = border_height
 
 class Piece(object):
-    def __init__(self, x, y, shapedef):
+    def __init__(self, y, x, shapedef):
+        print(f"Starting new shape at: X={x}, Y={y}.")
+
         self._x = x
         self._y = y
         self.shape = shapedef['name']
@@ -182,6 +184,10 @@ class Piece(object):
         self.turn_length = len(self.turns)
         self.rotation = random.randrange(self.turn_length)
         self.last = { "none": 0 }
+        print(f"Shape: {self.shape}")
+
+    def __repr__(self) -> str:
+        return f"X: {self._x} || Y: {self._y} || Rotation: {self.rotation} || Shape: {self.shape}"
 
     @property
     def x(self):
@@ -197,7 +203,9 @@ class Piece(object):
     
     @y.setter
     def y(self,val):
+        print(f"Previous Y: {self._y}", end="")
         self._y = val
+        print(f" || New Y: {self._y}")
 
     @property
     def color(self):
@@ -256,10 +264,8 @@ def create_grid(x_size, y_size, locked_pos = {}) -> list:
     # There will ALWAYS be fewer items in locked_pos than in grid...
     # Loop over locked_pos instead
     for (x,y), color in locked_pos.items():
-        grid[x][y] = color
+        grid[y][x] = color
 
-    pp = pprint.PrettyPrinter(indent=2,compact=True,width=130)
-    pp.pprint(grid)
     return grid
 
 def convert_shape_format(shape: Piece) -> list:
@@ -275,30 +281,30 @@ def convert_shape_format(shape: Piece) -> list:
         row = list(line)
         for j, col in enumerate(row):
             if col == 'o':
-                positions.append((shape.x + j, shape.y + i))
+                positions.append((shape.x + j, shape.y + i - 4))
 
     return positions
 
 def valid_space(piece: Piece, grid) -> bool:
     accepted_pos = [[(j,i) for j in range(len(grid[i])) if grid[i][j] == (0,0,0)] for i in range(len(grid))]
+    flat = [j for sub in accepted_pos for j in sub]
 
     for pos in convert_shape_format(piece):
-        if pos not in accepted_pos and pos[1] > -1:
+        if pos not in flat and pos[1] > -1:
             return False
     
     return True
 
 def check_lost(positions):
-    pprint(positions)
     for (x,y) in positions:
-        if y < 1:
+        if y < 0:
             return True
 
     return False
 
 def get_shape():
     # Return a random key into the shapes dict
-    return Piece(block_x_cnt // 2, 0, shapes[random.choice(shape_list)])
+    return Piece(0, (block_x_cnt // 2) - 2, shapes[random.choice(shape_list)])
 
 def draw_text_middle():
     pass
@@ -309,8 +315,17 @@ def draw_grid(surface: pygame.Surface, grid):
     for x in range(len(grid[y])):
         pygame.draw.line(surface, (128,128,128), (top_left_x + (x * block_size), top_left_y), (top_left_x + (x * block_size), top_left_y + play_height) )
 
-def clear_rows():
-    pass
+def clear_rows(grid):
+    t_score = 0
+    cleared_rows = 0
+    for row in range(len(grid)):
+        if (0,0,0) not in grid[row]:
+            cleared_rows += 1
+            t_score += (len(grid[row]) * cleared_rows)
+            grid.pop(row)
+            grid = [(0,0,0) for _ in range(len(grid[row]))] + grid
+    
+    return grid
 
 def draw_next_shape():
     pass
@@ -331,7 +346,7 @@ def draw_window(surface: pygame.Surface, grid):
     # Draw the play field on top of the red background
     for y in range(len(grid)):
         for x in range(len(grid[y])):
-            pygame.draw.rect(surface, color=grid[y][x], rect=(top_left_x + (x * block_size), top_left_y + (y * block_size), block_size, block_size), width=1)
+            pygame.draw.rect(surface, color=grid[y][x], rect=(top_left_x + (x * block_size), top_left_y + (y * block_size), block_size, block_size))
 
     # Draw the red play background
     pygame.draw.rect(surface, (255, 0, 0), (top_left_x, top_left_y, play_width, play_height), 4)
@@ -354,6 +369,7 @@ def main(x_size, y_size):
     clock = pygame.time.Clock()
     fall_time = 0
     fall_speed = 270
+    score = 0
     surface = pygame.display.set_mode((play_width + border_width,play_height + border_height))
     pygame.display.update()
 
@@ -361,69 +377,69 @@ def main(x_size, y_size):
         fall_time += clock.get_rawtime()
         clock.tick()
         draw_window(surface,grid)
+        grid = create_grid(x_size, y_size, locked_pos)
 
         if fall_time > fall_speed:
             fall_time = 0
             current_piece.drop()
-            if not(valid_space(current_piece,grid)) and current_piece.y > -1:
+            if not(valid_space(current_piece,grid)) and current_piece.y > 0:
                 current_piece.undo_last()
+                change_piece = True
 
-                if check_lost(locked_pos.keys()):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            elif event.type == pygame.KEYDOWN:
+                keys = pygame.key.get_pressed()
+                if keys[pygame.K_ESCAPE]:
                     run = False
-                else:
-                    change_piece = True
 
-        if run:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    run = False
-                elif event.type == pygame.KEYDOWN:
-                    keys = pygame.key.get_pressed()
-                    if keys[pygame.K_ESCAPE]:
-                        run = False
-                    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-                        current_piece.left()
-                        if not(valid_space(current_piece,grid)):
-                            current_piece.undo_last()
-                    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-                        current_piece.right()
-                        if not(valid_space(current_piece,grid)):
-                            current_piece.undo_last()
-                    if keys[pygame.K_UP] or keys[pygame.K_w]:
-                        current_piece.rotate()
-                        if not(valid_space(current_piece,grid)):
-                            current_piece.undo_last()
+                if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                    current_piece.left()
+                    if not(valid_space(current_piece,grid)):
+                        current_piece.undo_last()
 
-                    if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-                        current_piece.drop()
-                        if not(valid_space(current_piece,grid)):
-                            current_piece.undo_last()
-                            if check_lost(locked_pos.keys()):
-                                run = False
-                            else:
-                                change_piece = True
+                if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                    current_piece.right()
+                    if not(valid_space(current_piece,grid)):
+                        current_piece.undo_last()
 
-        shape_pos = convert_shape_format(current_piece)
+                if keys[pygame.K_UP] or keys[pygame.K_w]:
+                    current_piece.rotate()
+                    if not(valid_space(current_piece,grid)):
+                        current_piece.undo_last()
 
-        for (x,y) in shape_pos:
-            grid[y][x] = current_piece.color
+                if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+                    current_piece.drop()
+                    if not(valid_space(current_piece,grid)) and current_piece.y > 0:
+                        current_piece.undo_last()
+                        change_piece = True
+
+        if check_lost(locked_pos.keys()):
+            run = False
 
         if change_piece:
             for pos in shape_pos:
-                locked_pos[pos] = current_piece.color
+                score += 1
+                if pos in locked_pos.keys():
+                    run = False
+                else:
+                    locked_pos[pos] = current_piece.color
             current_piece = next_piece
             next_piece = get_shape()
             change_piece = False
 
-        grid = create_grid(x_size, y_size, locked_pos)
+        shape_pos = convert_shape_format(current_piece)
+        for (x,y) in shape_pos:
+            if y > -1:
+                grid[y][x] = current_piece.color
 
     # draw everything after we break out of the while loop
     draw_window(surface,grid)
-    time.sleep(120)
+    time.sleep(10)
 
 def main_menu(block_x_cnt, block_y_cnt):
     main(block_x_cnt, block_y_cnt)
-    pass
-
+    
 
 main_menu(block_x_cnt, block_y_cnt)
