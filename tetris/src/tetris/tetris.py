@@ -174,8 +174,6 @@ top_left_y = border_height
 
 class Piece(object):
     def __init__(self, y, x, shapedef):
-        print(f"Starting new shape at: X={x}, Y={y}.")
-
         self._x = x
         self._y = y
         self.shape = shapedef['name']
@@ -184,7 +182,6 @@ class Piece(object):
         self.turn_length = len(self.turns)
         self.rotation = random.randrange(self.turn_length)
         self.last = { "none": 0 }
-        print(f"Shape: {self.shape}")
 
     def __repr__(self) -> str:
         return f"X: {self._x} || Y: {self._y} || Rotation: {self.rotation} || Shape: {self.shape}"
@@ -203,9 +200,7 @@ class Piece(object):
     
     @y.setter
     def y(self,val):
-        print(f"Previous Y: {self._y}", end="")
         self._y = val
-        print(f" || New Y: {self._y}")
 
     @property
     def color(self):
@@ -307,8 +302,10 @@ def get_shape():
     # Return a random key into the shapes dict
     return Piece(0, (block_x_cnt // 2) - 2, shapes[random.choice(shape_list)])
 
-def draw_text_middle():
-    pass
+def draw_text_score(surface: pygame.Surface,score):
+    font = pygame.font.SysFont('Arial', 24, bold=True)
+    label = font.render("Cleared: " + str(score), 1, (255,255,255))
+    surface.blit(label,(label.get_width() // 4, border_height + play_height - label.get_height()))
 
 def draw_grid(surface: pygame.Surface, grid):
     for y in range(len(grid)):
@@ -316,22 +313,31 @@ def draw_grid(surface: pygame.Surface, grid):
     for x in range(len(grid[y])):
         pygame.draw.line(surface, (128,128,128), (top_left_x + (x * block_size), top_left_y), (top_left_x + (x * block_size), top_left_y + play_height) )
 
-def clear_rows(grid):
-    t_score = 0
-    cleared_rows = 0
+def clear_rows(grid, locked_pos):
+    remove_row = True
+
     for row in range(len(grid)):
         if (0,0,0) not in grid[row]:
-            cleared_rows += 1
-            t_score += (len(grid[row]) * cleared_rows)
-            grid.pop(row)
-            grid = [(0,0,0) for _ in range(len(grid[row]))] + grid
-    
-    return grid
+            for col in range(len(grid[row])):
+                if (col, row) not in locked_pos.keys():
+                    remove_row = False
+
+            if remove_row:
+                t_locked = {}
+                for (l_col,l_row) in locked_pos:
+                    if l_row < row:
+                        t_locked[(l_col,(l_row+1))] = locked_pos[(l_col,l_row)]
+                    elif l_row > row:
+                        t_locked[(l_col,l_row)] = locked_pos[(l_col,l_row)]
+
+                locked_pos = t_locked
+
+    return locked_pos
 
 def draw_next_shape():
     pass
 
-def draw_window(surface: pygame.Surface, grid):
+def draw_window(surface: pygame.Surface, grid, score):
     # fill the surface with black
     surface.fill((0,0,0))
 
@@ -353,6 +359,7 @@ def draw_window(surface: pygame.Surface, grid):
     pygame.draw.rect(surface, (255, 0, 0), (top_left_x, top_left_y, play_width, play_height), 4)
 
     draw_grid(surface,grid)
+    draw_text_score(surface, score)
 
     # Update the display
     pygame.display.update()
@@ -377,7 +384,7 @@ def main(x_size, y_size):
     while run:
         fall_time += clock.get_rawtime()
         clock.tick()
-        draw_window(surface,grid)
+        draw_window(surface, grid, score)
         grid = create_grid(x_size, y_size, locked_pos)
 
         if fall_time > fall_speed:
@@ -421,7 +428,6 @@ def main(x_size, y_size):
 
         if change_piece:
             for pos in shape_pos:
-                score += 1
                 if pos in locked_pos.keys():
                     run = False
                 else:
@@ -435,8 +441,12 @@ def main(x_size, y_size):
             if y > -1:
                 grid[y][x] = current_piece.color
 
+        new_locked_pos = clear_rows(grid, locked_pos)
+        score += (len(locked_pos) - len(new_locked_pos)) / x_size
+        locked_pos = new_locked_pos
+
     # draw everything after we break out of the while loop
-    draw_window(surface,grid)
+    draw_window(surface, grid, score)
     time.sleep(10)
 
 def main_menu(block_x_cnt, block_y_cnt):
