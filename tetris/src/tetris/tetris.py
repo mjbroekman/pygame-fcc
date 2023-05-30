@@ -304,7 +304,7 @@ def get_shape():
 
 def draw_text_score(surface: pygame.Surface,score):
     font = pygame.font.SysFont('Arial', 24, bold=True)
-    label = font.render("Cleared: " + str(int(score)), 1, (255,255,255))
+    label = font.render("Score: " + str(int(score)), 1, (255,255,255))
     surface.blit(label,(label.get_width() // 4, border_height + play_height - label.get_height()))
 
 def draw_grid(surface: pygame.Surface, grid):
