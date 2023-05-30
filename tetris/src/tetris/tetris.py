@@ -442,7 +442,13 @@ def main(x_size, y_size):
                 grid[y][x] = current_piece.color
 
         new_locked_pos = clear_rows(grid, locked_pos)
-        score += (len(locked_pos) - len(new_locked_pos)) / x_size
+        cleared_rows = (len(locked_pos) - len(new_locked_pos)) / x_size
+        if cleared_rows > 1:
+            score += cleared_rows * (cleared_rows - 1)
+        if cleared_rows == 1:
+            score += cleared_rows
+
+        fall_speed -= cleared_rows
         locked_pos = new_locked_pos
 
     # draw everything after we break out of the while loop
