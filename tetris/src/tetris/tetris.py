@@ -352,8 +352,6 @@ def draw_next_shape(surface: pygame.Surface, next_piece: Piece):
             
             pygame.draw.rect(surface, color, rect=(shape_left + (block_size * col), shape_top + (block_size * row), block_size, block_size))
 
-
-
 def draw_window(surface: pygame.Surface, grid, score, next_piece: Piece):
     # fill the surface with black
     surface.fill((0,0,0))
