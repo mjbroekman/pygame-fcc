@@ -334,10 +334,27 @@ def clear_rows(grid, locked_pos):
 
     return locked_pos
 
-def draw_next_shape():
-    pass
+def draw_next_shape(surface: pygame.Surface, next_piece: Piece):
+    font = pygame.font.SysFont('Monaco',20)
+    label = font.render('Next Piece',1,(255,255,255))
+    label_left = (border_width // 2 + play_width + label.get_width() // 3)
+    label_top = (border_height + play_height - (block_size * 6))
+    shape_left = label_left + block_size
+    shape_top = label_top + label.get_height()
 
-def draw_window(surface: pygame.Surface, grid, score):
+    surface.blit(label,(label_left, label_top))
+    for row in range(len(next_piece.turns[next_piece.rotation])):
+        for col in range(len(next_piece.turns[next_piece.rotation][row])):
+            if next_piece.turns[next_piece.rotation][row][col] == '.':
+                color = (0,0,0)
+            if next_piece.turns[next_piece.rotation][row][col] == 'o':
+                color = next_piece.color
+            
+            pygame.draw.rect(surface, color, rect=(shape_left + (block_size * col), shape_top + (block_size * row), block_size, block_size))
+
+
+
+def draw_window(surface: pygame.Surface, grid, score, next_piece: Piece):
     # fill the surface with black
     surface.fill((0,0,0))
 
@@ -360,7 +377,7 @@ def draw_window(surface: pygame.Surface, grid, score):
 
     draw_grid(surface,grid)
     draw_text_score(surface, score)
-
+    draw_next_shape(surface, next_piece)
     # Update the display
     pygame.display.update()
 
@@ -384,7 +401,7 @@ def main(x_size, y_size):
     while run:
         fall_time += clock.get_rawtime()
         clock.tick()
-        draw_window(surface, grid, score)
+        draw_window(surface, grid, score, next_piece)
         grid = create_grid(x_size, y_size, locked_pos)
 
         if fall_time > fall_speed:
@@ -452,7 +469,7 @@ def main(x_size, y_size):
         locked_pos = new_locked_pos
 
     # draw everything after we break out of the while loop
-    draw_window(surface, grid, score)
+    draw_window(surface, grid, score, next_piece)
     time.sleep(10)
 
 def main_menu(block_x_cnt, block_y_cnt):
